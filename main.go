@@ -38,7 +38,7 @@ func cap(s string) string {
 }
 
 // une fonction qui trouvent l'index des parametres et change le texte
-func manip(sent string) {
+func manip(sent string) []string {
 	newTab := strings.Fields(sent)
 	for index, word := range newTab {
 		if word == "(hex)" {
@@ -58,27 +58,31 @@ func manip(sent string) {
 			newTab[index] = ""
 		} else if word == "(up," {
 			next := newTab[index+1]
-			end, _ := strconv.Atoi(next[:len(next)])
+			end, _ := strconv.Atoi(next[:len(next)-1])
 			for i := 1; i <= end; i++ {
 				newTab[index-i] = up(newTab[index-i])
 			}
 			newTab[index] = ""
+			newTab[index+1] = ""
 		} else if word == "(low," {
 			next := newTab[index+1]
-			end, _ := strconv.Atoi(next[:len(next)])
+			end, _ := strconv.Atoi(next[:len(next)-1])
 			for i := 1; i <= end; i++ {
 				newTab[index-i] = low(newTab[index-i])
 			}
 			newTab[index] = ""
+			newTab[index+1] = ""
 		} else if word == "(cap," {
 			next := newTab[index+1]
-			end, _ := strconv.Atoi(next[:len(next)])
+			end, _ := strconv.Atoi(next[:len(next)-1])
 			for i := 1; i <= end; i++ {
 				newTab[index-i] = cap(newTab[index-i])
 			}
 			newTab[index] = ""
+			newTab[index+1] = ""
 		}
 	}
+	return newTab
 }
 
 //les changements qui ne n'cessitent pas de paramètre
