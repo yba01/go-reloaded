@@ -10,6 +10,12 @@ import (
 func main() {
 	if len(os.Args) == 3 {
 		content, _ := ioutil.ReadFile(os.Args[1])
+		result_cont := manip(string(content))
+		final_reslt := affiche(result_cont)
+		err := ioutil.WriteFile(os.Args[2], []byte(final_reslt), 0644)
+		if err != nil {
+			os.Exit(0)
+		}
 	}
 }
 
@@ -35,6 +41,29 @@ func low(s string) string {
 func cap(s string) string {
 	s = strings.Title(s)
 	return s
+}
+func Inslice(a rune) bool {
+	ind := []rune{'a', 'e', 'i', 'o', 'u', 'h', 'A', 'E', 'I', 'O', 'U', 'H'}
+	for _, char := range ind {
+		if a == char {
+			return true
+		}
+	}
+	return false
+}
+func change(a string) string {
+	if a == "a" {
+		return "an"
+	} else {
+		return "An"
+	}
+}
+func affiche(back []string) string {
+	last := ""
+	for _, mot := range back {
+		last = last + " " + mot
+	}
+	return last
 }
 
 // une fonction qui trouvent l'index des parametres et change le texte
@@ -80,6 +109,11 @@ func manip(sent string) []string {
 			}
 			newTab[index] = ""
 			newTab[index+1] = ""
+		} else if word == "a" || word == "A" {
+			others := newTab[index+1]
+			if Inslice(rune(others[0])) {
+				newTab[index] = change(word)
+			}
 		}
 	}
 	return newTab
