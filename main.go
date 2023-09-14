@@ -10,8 +10,8 @@ import (
 func main() {
 	if len(os.Args) == 3 {
 		content, _ := ioutil.ReadFile(os.Args[1])
-		result_cont := manip(string(content))
-		final_reslt := affiche(result_cont)
+		cont := correct(string(content))
+		result_cont := manip(strings.Fields(cont))
 		err := ioutil.WriteFile(os.Args[2], []byte(final_reslt), 0644)
 		if err != nil {
 			os.Exit(0)
@@ -19,7 +19,14 @@ func main() {
 	}
 }
 
-// 2.les fonctions qui donnent les differentes changements voulus dans le texte:les parametres
+// rewrite text
+func correct(s string) string {
+	a := strings.ReplaceAll(s, "(", " (")
+	a = strings.ReplaceAll(a, ")", ") ")
+	return a
+}
+
+// 5 particulars keys words functions
 func hex(s string) string {
 	a, _ := strconv.ParseInt(s, 16, 64)
 	s = strconv.Itoa(int(a))
@@ -39,11 +46,13 @@ func low(s string) string {
 	return s
 }
 func cap(s string) string {
+	s = strings.ToLower(s)
 	s = strings.Title(s)
 	return s
 }
-func Inslice(a rune) bool {
-	ind := []rune{'a', 'e', 'i', 'o', 'u', 'h', 'A', 'E', 'I', 'O', 'U', 'H'}
+
+// presence of character in slice
+func Inslice(a rune, ind []rune) bool {
 	for _, char := range ind {
 		if a == char {
 			return true
@@ -51,6 +60,8 @@ func Inslice(a rune) bool {
 	}
 	return false
 }
+
+// change a or A to an or An
 func change(a string) string {
 	if a == "a" {
 		return "an"
@@ -58,66 +69,49 @@ func change(a string) string {
 		return "An"
 	}
 }
-func affiche(back []string) string {
-	last := ""
-	for _, mot := range back {
-		last = last + " " + mot
-	}
-	return last
-}
 
-// une fonction qui trouvent l'index des parametres et change le texte
-func manip(sent string) []string {
-	newTab := strings.Fields(sent)
-	for index, word := range newTab {
-		if word == "(hex)" {
-			newTab[index-1] = hex(newTab[index-1])
-			newTab[index] = ""
-		} else if word == "(bin)" {
-			newTab[index-1] = bin(newTab[index-1])
-			newTab[index] = ""
-		} else if word == "(up)" {
-			newTab[index-1] = up(newTab[index-1])
-			newTab[index] = ""
-		} else if word == "(low)" {
-			newTab[index-1] = low(newTab[index-1])
-			newTab[index] = ""
-		} else if word == "(cap)" {
-			newTab[index-1] = cap(newTab[index-1])
-			newTab[index] = ""
-		} else if word == "(up," {
-			next := newTab[index+1]
-			end, _ := strconv.Atoi(next[:len(next)-1])
-			for i := 1; i <= end; i++ {
-				newTab[index-i] = up(newTab[index-i])
-			}
-			newTab[index] = ""
-			newTab[index+1] = ""
-		} else if word == "(low," {
-			next := newTab[index+1]
-			end, _ := strconv.Atoi(next[:len(next)-1])
-			for i := 1; i <= end; i++ {
-				newTab[index-i] = low(newTab[index-i])
-			}
-			newTab[index] = ""
-			newTab[index+1] = ""
-		} else if word == "(cap," {
-			next := newTab[index+1]
-			end, _ := strconv.Atoi(next[:len(next)-1])
-			for i := 1; i <= end; i++ {
-				newTab[index-i] = cap(newTab[index-i])
-			}
-			newTab[index] = ""
-			newTab[index+1] = ""
-		} else if word == "a" || word == "A" {
-			others := newTab[index+1]
-			if Inslice(rune(others[0])) {
-				newTab[index] = change(word)
+// text's manipulation by simple keys words....
+func manip(slice []string) []string {
+	type App struct {
+		name string
+		do   func(string) string
+	}
+	man_hex := App{name: "(hex)", do: hex}
+	man_bin := App{name: "(bin)", do: bin}
+	man_up := App{name: "(up)", do: up}
+	man_low := App{name: "(low)", do: low}
+	man_cap := App{name: "(cap)", do: cap}
+
+	list := []App{man_hex, man_bin, man_up, man_low, man_cap}
+
+	for index, word := range slice {
+		for _, mot := range list {
+			if word == mot.name {
+				if index > 0 {
+					slice[index-1] = mot.do(slice[index-1])
+					slice = remove(slice, index)
+				} else if index == 0 {
+					slice = remove(slice, index)
+				}
 			}
 		}
 	}
-	return newTab
+	return slice
 }
 
-//les changements qui ne n'cessitent pas de paramètre
-//Résultat écrit dans un autre fichier .txt
+// remove key word in text
+func remove(slc []string, i int) []string {
+	return append(slc[:i], slc[i+1:]...)
+}
+
+func gestion_ponc(do []string) []string {
+	for index, mot := range do {
+		char := rune(mot[0])
+		id_ponc := []rune{'.', ',', '!', '?', ':', ';'}
+		if Inslice(char, id_ponc) {
+			do[index-1] = do[index-1] + ","
+			do[index] = mot[1:]
+		}
+	}
+	return do
+}
