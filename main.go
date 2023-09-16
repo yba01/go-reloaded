@@ -3,6 +3,7 @@ package main
 import (
 	"io/ioutil"
 	"os"
+	"regexp"
 	"strconv"
 	"strings"
 )
@@ -12,6 +13,7 @@ func main() {
 		content, _ := ioutil.ReadFile(os.Args[1])
 		cont := correct(string(content))
 		result_cont := manip(strings.Fields(cont))
+		final_reslt := Affichage(result_cont)
 		err := ioutil.WriteFile(os.Args[2], []byte(final_reslt), 0644)
 		if err != nil {
 			os.Exit(0)
@@ -19,12 +21,47 @@ func main() {
 	}
 }
 
-// rewrite text
-func correct(s string) string {
-	a := strings.ReplaceAll(s, "(", " (")
-	a = strings.ReplaceAll(a, ")", ") ")
-	return a
+// 1.
+
+// remove space
+func remove_space(s string) string {
+	corr0 := strings.Fields(s)
+	corr1 := strings.Join(corr0, " ")
+	return corr1
 }
+
+// handle parenthesis
+func parenthese(s string) string {
+	corr2 := strings.ReplaceAll(s, "(", " (")
+	corr3 := strings.ReplaceAll(corr2, ")", ") ")
+	corr4 := strings.ReplaceAll(corr3, "( ", "(")
+	corr5 := strings.ReplaceAll(corr4, " )", ")")
+	return corr5
+}
+
+// place pattern of ponctuation on a right way
+func ponct(s string) string {
+	str := remove_space(s)
+	pattern := "[.,;:!?]+"
+	regex, _ := regexp.Compile(pattern)
+	matches := regex.FindAllString(str, -1)
+	for _, motif := range matches {
+		intxt := " " + motif
+		replce := motif + " "
+		str = strings.ReplaceAll(str, intxt, replce)
+	}
+	return str
+}
+
+// format text
+func correct(s string) string {
+	co1 := ponct(s)
+	co2 := parenthese(co1)
+	corrected := remove_space(co2)
+	return corrected
+}
+
+//2.
 
 // 5 particulars keys words functions
 func hex(s string) string {
@@ -72,20 +109,18 @@ func change(a string) string {
 
 // text's manipulation by simple keys words....
 func manip(slice []string) []string {
-	type App struct {
+	tabStruct := []struct {
 		name string
 		do   func(string) string
+	}{
+		{"(hex)", hex},
+		{"(bin)", bin},
+		{"(up)", up},
+		{"(low)", low},
+		{"(cap)", cap},
 	}
-	man_hex := App{name: "(hex)", do: hex}
-	man_bin := App{name: "(bin)", do: bin}
-	man_up := App{name: "(up)", do: up}
-	man_low := App{name: "(low)", do: low}
-	man_cap := App{name: "(cap)", do: cap}
-
-	list := []App{man_hex, man_bin, man_up, man_low, man_cap}
-
 	for index, word := range slice {
-		for _, mot := range list {
+		for _, mot := range tabStruct {
 			if word == mot.name {
 				if index > 0 {
 					slice[index-1] = mot.do(slice[index-1])
@@ -103,15 +138,48 @@ func manip(slice []string) []string {
 func remove(slc []string, i int) []string {
 	return append(slc[:i], slc[i+1:]...)
 }
-
-func gestion_ponc(do []string) []string {
-	for index, mot := range do {
-		char := rune(mot[0])
-		id_ponc := []rune{'.', ',', '!', '?', ':', ';'}
-		if Inslice(char, id_ponc) {
-			do[index-1] = do[index-1] + ","
-			do[index] = mot[1:]
+func manip_complex(s []string) []string {
+	Tablestruct:=[]struct{
+		name string
+		do func(string) string
+	}{
+		{"(low,",low},
+		{"(up,",up},
+		{"(cap,",cap},
+	}
+	for i,word:=s {
+		for _,mot:=range Tablestruct {
+			if word==mot.name {
+				if i<len(s)-1 {
+					pattern:=`^[0-9]\)$`
+					match,_:=regexp.MatchString(pattern,s[i+1])
+					if match {
+						stop:=strings.Atoi(s[i+1][:len(s[i+1]-1)])
+						s=iter_funct(s,mot.do,stop,i)
+					}
+				}
+			}
 		}
 	}
-	return do
+}
+func iter_funct(str []string,faire func(string) string,num int, index int)[]string {
+	for i:=index-1;i>=index-num;i--{
+		if i>=0 {
+			str[i]=faire(s[i])
+		}
+	}
+	s=remove(str,index)
+	s=remove(str,index)
+	return str
+}
+func index_end(str []string,debut int) int{
+	var result int
+	for i:=debut;i<len(str);i++ {
+		match,_:=regexp.MatchString(`\)\)$`,str[i])
+		if match {
+			result:=i
+			break
+		}
+	}
+	return result
 }
