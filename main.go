@@ -16,7 +16,7 @@ func main() {
 		final_reslt := Affichage(result_cont)
 		err := ioutil.WriteFile(os.Args[2], []byte(final_reslt), 0644)
 		if err != nil {
-			os.Exit(0)
+			return
 		}
 	}
 }
@@ -156,11 +156,21 @@ func manip_complex(s []string) []string {
 					if match {
 						stop:=strings.Atoi(s[i+1][:len(s[i+1]-1)])
 						s=iter_funct(s,mot.do,stop,i)
+					}else {
+						if i+1<len(s)-1 {
+							AnTab:=s[i+1:index_end(s,i)+1]
+							AnTab[len(AnTab)-1]=strings.ReplaceAll(AnTab[len(AnTab)-1],"))",")")
+							result_tab:=manip(AnTab)
+							result_tab[0]=result_tab+")"
+							s[i+1:index_end(s,i)+1]=result_tab
+							s=manip_complex(s)
+						}
 					}
 				}
 			}
 		}
 	}
+	return s
 }
 func iter_funct(str []string,faire func(string) string,num int, index int)[]string {
 	for i:=index-1;i>=index-num;i--{
@@ -177,7 +187,7 @@ func index_end(str []string,debut int) int{
 	for i:=debut;i<len(str);i++ {
 		match,_:=regexp.MatchString(`\)\)$`,str[i])
 		if match {
-			result:=i
+			result=i
 			break
 		}
 	}
