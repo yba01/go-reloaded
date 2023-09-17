@@ -12,8 +12,7 @@ func main() {
 	if len(os.Args) == 3 {
 		content, _ := ioutil.ReadFile(os.Args[1])
 		cont := correct(string(content))
-		result_cont := manip(strings.Fields(cont))
-		final_reslt := Affichage(result_cont)
+		final_reslt := text_manip(cont)
 		err := ioutil.WriteFile(os.Args[2], []byte(final_reslt), 0644)
 		if err != nil {
 			return
@@ -21,7 +20,7 @@ func main() {
 	}
 }
 
-// 1.
+// 1.TEXT FORMATAGE
 
 // remove space
 func remove_space(s string) string {
@@ -53,41 +52,6 @@ func ponct(s string) string {
 	return str
 }
 
-// format text
-func correct(s string) string {
-	co1 := ponct(s)
-	co2 := parenthese(co1)
-	corrected := remove_space(co2)
-	return corrected
-}
-
-//2.
-
-// 5 particulars keys words functions
-func hex(s string) string {
-	a, _ := strconv.ParseInt(s, 16, 64)
-	s = strconv.Itoa(int(a))
-	return s
-}
-func bin(s string) string {
-	a, _ := strconv.ParseInt(s, 2, 64)
-	s = strconv.Itoa(int(a))
-	return s
-}
-func up(s string) string {
-	s = strings.ToUpper(s)
-	return s
-}
-func low(s string) string {
-	s = strings.ToLower(s)
-	return s
-}
-func cap(s string) string {
-	s = strings.ToLower(s)
-	s = strings.Title(s)
-	return s
-}
-
 // presence of character in slice
 func Inslice(a rune, ind []rune) bool {
 	for _, char := range ind {
@@ -107,6 +71,70 @@ func change(a string) string {
 	}
 }
 
+// Print text in a good format
+func Affichage(str []string) string {
+	return strings.Join(str, " ")
+}
+
+// handle an or An in text
+func Atoan(str string) string {
+	str0 := strings.Fields(str)
+	ind := []rune{'a', 'e', 'i', 'o', 'u', 'h', 'A', 'E', 'I', 'O', 'U', 'H'}
+	for index, word := range str0 {
+		if word == "a" || word == "A" {
+			if index+1 < len(str0)-1 {
+				others := str0[index+1]
+				if Inslice(rune(others[0]), ind) {
+					str0[index] = change(word)
+				}
+			}
+		}
+	}
+	return Affichage(str0)
+}
+
+// format text
+func correct(s string) string {
+	co1 := Atoan(s)
+	co2 := ponct(co1)
+	co3 := parenthese(co2)
+	corrected := remove_space(co3)
+	return corrected
+}
+
+//2.TEXT MANIPULATION
+
+// particulars keys words functions
+func hex(s string) string {
+	a, err := strconv.ParseInt(s, 16, 64)
+	if err != nil {
+		return s
+	}
+	s = strconv.Itoa(int(a))
+	return s
+}
+func bin(s string) string {
+	a, err := strconv.ParseInt(s, 2, 64)
+	if err != nil {
+		return s
+	}
+	s = strconv.Itoa(int(a))
+	return s
+}
+func up(s string) string {
+	s = strings.ToUpper(s)
+	return s
+}
+func low(s string) string {
+	s = strings.ToLower(s)
+	return s
+}
+func cap(s string) string {
+	s = strings.ToLower(s)
+	s = strings.Title(s)
+	return s
+}
+
 // text's manipulation by simple keys words....
 func manip(slice []string) []string {
 	tabStruct := []struct {
@@ -119,51 +147,54 @@ func manip(slice []string) []string {
 		{"(low)", low},
 		{"(cap)", cap},
 	}
+	str := slice
 	for index, word := range slice {
 		for _, mot := range tabStruct {
 			if word == mot.name {
 				if index > 0 {
-					slice[index-1] = mot.do(slice[index-1])
-					slice = remove(slice, index)
+					str[index-1] = mot.do(str[index-1])
+					str = remove(str, index)
 				} else if index == 0 {
-					slice = remove(slice, index)
+					str = remove(str, index)
 				}
 			}
 		}
 	}
-	return slice
+	return str
 }
 
 // remove key word in text
 func remove(slc []string, i int) []string {
 	return append(slc[:i], slc[i+1:]...)
 }
+
+// more complex text's manipulation by keys words by any strings and numbers like (up, 13)
 func manip_complex(s []string) []string {
-	Tablestruct:=[]struct{
+	Tablestruct := []struct {
 		name string
-		do func(string) string
+		do   func(string) string
 	}{
-		{"(low,",low},
-		{"(up,",up},
-		{"(cap,",cap},
+		{"(low,", low},
+		{"(up,", up},
+		{"(cap,", cap},
 	}
-	for i,word:=s {
-		for _,mot:=range Tablestruct {
-			if word==mot.name {
-				if i<len(s)-1 {
-					pattern:=`^[0-9]\)$`
-					match,_:=regexp.MatchString(pattern,s[i+1])
+	for i, word := range s {
+		for _, mot := range Tablestruct {
+			if word == mot.name {
+				if i < len(s)-1 {
+					pattern := `^[0-9]\)$`
+					match, _ := regexp.MatchString(pattern, s[i+1])
 					if match {
-						stop:=strings.Atoi(s[i+1][:len(s[i+1]-1)])
-						s=iter_funct(s,mot.do,stop,i)
-					}else {
-						if i+1<len(s)-1 {
-							AnTab:=s[i+1:index_end(s,i)+1]
-							AnTab[len(AnTab)-1]=strings.ReplaceAll(AnTab[len(AnTab)-1],"))",")")
-							result_tab:=manip(AnTab)
-							result_tab[0]=result_tab+")"
-							s[i+1:index_end(s,i)+1]=result_tab
-							s=manip_complex(s)
+						stop, _ := strconv.Atoi(s[i+1][:len(s[i+1])-1])
+						s = iter_funct(s, mot.do, stop, i)
+					} else {
+						if i+1 < len(s)-1 {
+							AnTab := s[i+1 : index_end(s, i)+1]
+							AnTab[len(AnTab)-1] = strings.ReplaceAll(AnTab[len(AnTab)-1], "))", ")")
+							result_tab := manip(AnTab)
+							s[i+1] = result_tab[0] + ")"
+							s = multi_remove(s, i+2, index_end(s, i)-i+1)
+							s = manip_complex(s)
 						}
 					}
 				}
@@ -172,24 +203,44 @@ func manip_complex(s []string) []string {
 	}
 	return s
 }
-func iter_funct(str []string,faire func(string) string,num int, index int)[]string {
-	for i:=index-1;i>=index-num;i--{
-		if i>=0 {
-			str[i]=faire(s[i])
+
+// for using different parameters on more than one string by example: (up, 3)
+func iter_funct(str []string, faire func(string) string, num int, index int) []string {
+	for i := index - 1; i >= index-num; i-- {
+		if i >= 0 {
+			str[i] = faire(str[i])
 		}
 	}
-	s=remove(str,index)
-	s=remove(str,index)
+	str = remove(str, index)
+	str = remove(str, index)
 	return str
 }
-func index_end(str []string,debut int) int{
+
+// find index of pattern in slice
+func index_end(str []string, debut int) int {
 	var result int
-	for i:=debut;i<len(str);i++ {
-		match,_:=regexp.MatchString(`\)\)$`,str[i])
+	for i := debut; i < len(str); i++ {
+		match, _ := regexp.MatchString(`\)\)$`, str[i])
 		if match {
-			result=i
+			result = i
 			break
 		}
 	}
 	return result
+}
+
+// delete more than one string in string's slice
+func multi_remove(str []string, index int, time int) []string {
+	for i := 0; i < time; i++ {
+		str = remove(str, index)
+	}
+	return str
+}
+
+// manipulation text
+func text_manip(str string) string {
+	str0 := strings.Fields(str)
+	str0 = manip(str0)
+	str0 = manip_complex(str0)
+	return correct(Affichage(str0))
 }
