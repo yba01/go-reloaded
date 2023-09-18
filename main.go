@@ -12,8 +12,8 @@ func main() {
 	if len(os.Args) == 3 {
 		content, _ := ioutil.ReadFile(os.Args[1])
 		cont := correct(string(content))
-		final_reslt := text_manip(cont)
-		err := ioutil.WriteFile(os.Args[2], []byte(final_reslt), 0644)
+		cont = text_manip(cont)
+		err := ioutil.WriteFile(os.Args[2], []byte(cont), 0644)
 		if err != nil {
 			return
 		}
@@ -135,8 +135,8 @@ func cap(s string) string {
 	return s
 }
 
-// text's manipulation by simple keys words....
-func manip(slice []string) []string {
+// text's manipulation by simple keys words in particular index
+func manip(slice []string, i int) []string {
 	tabStruct := []struct {
 		name string
 		do   func(string) string
@@ -146,21 +146,40 @@ func manip(slice []string) []string {
 		{"(up)", up},
 		{"(low)", low},
 		{"(cap)", cap},
+		{"(hex))", hex},
+		{"(bin))", bin},
+		{"(up))", up},
+		{"(low))", low},
+		{"(cap))", cap},
 	}
-	str := slice
-	for index, word := range slice {
-		for _, mot := range tabStruct {
-			if word == mot.name {
-				if index > 0 {
-					str[index-1] = mot.do(str[index-1])
-					str = remove(str, index)
-				} else if index == 0 {
-					str = remove(str, index)
+	for _, mot := range tabStruct {
+		if i < len(slice) {
+			if slice[i] == mot.name {
+				if i > 0 {
+					slice[i-1] = mot.do(slice[i-1])
+					slice = remove(slice, i)
+				} else if i == 0 {
+					slice = remove(slice, i)
 				}
 			}
 		}
 	}
-	return str
+	return slice
+}
+
+// text's manipulation by simple keys words....
+func base_manip(cont []string) []string {
+	i := 0
+	lon := len(cont)
+	for i < len(cont) {
+		cont = manip(cont, i)
+		if lon == len(cont) {
+			i = i + 1
+		} else if len(cont) < lon {
+			lon = len(cont)
+		}
+	}
+	return cont
 }
 
 // remove key word in text
@@ -168,7 +187,32 @@ func remove(slc []string, i int) []string {
 	return append(slc[:i], slc[i+1:]...)
 }
 
-// more complex text's manipulation by keys words by any strings and numbers like (up, 13)
+// for using different parameters on more than one string by example: (up, 3)
+func iter_funct(str []string, faire func(string) string, num int, index int) []string {
+	for i := index - 1; i >= index-num; i-- {
+		if i >= 0 {
+			str[i] = faire(str[i])
+		}
+	}
+	str = remove(str, index)
+	str = remove(str, index)
+	return str
+}
+
+// find index of pattern in slice
+func index_end(str []string, debut int) int {
+	var result int
+	for i := debut; i < len(str); i++ {
+		match, _ := regexp.MatchString(`\w+\)\)`, str[i])
+		if match {
+			result = i + 1
+			break
+		}
+	}
+	return result
+}
+
+// text's manipulation in case of more complicated keys word like (cup, A (hex) (bin))
 func manip_complex(s []string) []string {
 	Tablestruct := []struct {
 		name string
@@ -189,12 +233,12 @@ func manip_complex(s []string) []string {
 						s = iter_funct(s, mot.do, stop, i)
 					} else {
 						if i+1 < len(s)-1 {
-							AnTab := s[i+1 : index_end(s, i)+1]
-							AnTab[len(AnTab)-1] = strings.ReplaceAll(AnTab[len(AnTab)-1], "))", ")")
-							result_tab := manip(AnTab)
-							s[i+1] = result_tab[0] + ")"
-							s = multi_remove(s, i+2, index_end(s, i)-i+1)
-							s = manip_complex(s)
+							if i+1 < len(s)-1 {
+								res := base_manip(s[i+1 : index_end(s, i)+1])
+								s[i+1] = res[0] + ")"
+								s = multi_remove(s, i+2, index_end(s, i)-i-1)
+								s = manip_complex(s)
+							}
 						}
 					}
 				}
@@ -202,31 +246,6 @@ func manip_complex(s []string) []string {
 		}
 	}
 	return s
-}
-
-// for using different parameters on more than one string by example: (up, 3)
-func iter_funct(str []string, faire func(string) string, num int, index int) []string {
-	for i := index - 1; i >= index-num; i-- {
-		if i >= 0 {
-			str[i] = faire(str[i])
-		}
-	}
-	str = remove(str, index)
-	str = remove(str, index)
-	return str
-}
-
-// find index of pattern in slice
-func index_end(str []string, debut int) int {
-	var result int
-	for i := debut; i < len(str); i++ {
-		match, _ := regexp.MatchString(`\)\)$`, str[i])
-		if match {
-			result = i
-			break
-		}
-	}
-	return result
 }
 
 // delete more than one string in string's slice
@@ -240,7 +259,7 @@ func multi_remove(str []string, index int, time int) []string {
 // manipulation text
 func text_manip(str string) string {
 	str0 := strings.Fields(str)
-	str0 = manip(str0)
+	str0 = base_manip(str0)
 	str0 = manip_complex(str0)
 	return correct(Affichage(str0))
 }
