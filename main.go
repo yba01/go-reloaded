@@ -3,9 +3,11 @@
 package main
 
 import (
+	"strconv"
 	"strings"
 )
 
+// handle all about ponctuation
 func Ponc(s string) string {
 	for i := 0; i < len(strings.Fields(s)); i++ {
 		s = Single_Ponc(s)
@@ -86,4 +88,96 @@ func Quote_handle(s string) string {
 		}
 	}
 	return write(str)
+}
+
+// handle all paranthesis
+func parenthese(s string) string {
+	TabPonc := []struct {
+		in  string
+		rep string
+	}{
+		{".", " . "},
+		{",", " , "},
+		{";", " ; "},
+		{":", " : "},
+		{"!", " ! "},
+		{"?", " ? "},
+		{"(", " ( "},
+		{")", " ) "},
+		{"( hex )", "(hex)"},
+		{"( bin )", "(bin)"},
+		{"( up )", "(up)"},
+		{"( low )", "(low)"},
+		{"( cap )", "(cap)"},
+		{" ) ", ") "},
+	}
+	for _, char := range TabPonc {
+		s = strings.ReplaceAll(s, char.in, char.rep)
+	}
+	return s
+}
+
+// delete something on slice
+func remove(s []string, index int) []string {
+	var str []string
+	if index > 0 && index < len(s) {
+		for i := 0; i < len(s); i++ {
+			if i != index {
+				str = append(str, s[i])
+			}
+		}
+	}
+	return str
+}
+
+// simple manipulation mean simple key word
+func manip_hex(s []string) []string {
+	ind := []rune{'.', ',', ';', ':', '!', '?', '\''}
+	for i := 0; i < len(s); i++ {
+		if s[i] == "(hex)" {
+			if i-1 >= 0 {
+				if Inslice(rune(s[i-1][0]), ind) {
+					a := s[i-1]
+					s[i-1] = s[i]
+					s[i] = a
+					return manip_hex(s)
+				} else {
+					a, err := strconv.ParseInt(s[i-1], 16, 64)
+					if err != nil {
+						return remove(s, i)
+					}
+					s[i-1] = strconv.Itoa(int(a))
+					s = remove(s, i)
+				}
+			} else {
+				return remove(s, i)
+			}
+		}
+	}
+	return s
+}
+func manip_bin(s []string) []string {
+	ind := []rune{'.', ',', ';', ':', '!', '?', '\''}
+	for i := 0; i < len(s); i++ {
+		if s[i] == "(bin)" {
+			if i-1 >= 0 {
+				if Inslice(rune(s[i-1][0]), ind) {
+					a := s[i-1]
+					s[i-1] = s[i]
+					s[i] = a
+					return manip_bin(s)
+				} else {
+					a, err := strconv.ParseInt(s[i-1], 2, 64)
+					if err != nil {
+						return remove(s, i)
+					}
+					s[i-1] = strconv.Itoa(int(a))
+					s = remove(s, i)
+				}
+			} else {
+				return remove(s, i)
+			}
+		}
+	}
+	return s
 }
