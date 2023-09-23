@@ -3,6 +3,9 @@
 package main
 
 import (
+	"io/ioutil"
+	"os"
+	"regexp"
 	"strconv"
 	"strings"
 )
@@ -12,6 +15,7 @@ func Ponc(s string) string {
 	for i := 0; i < len(strings.Fields(s)); i++ {
 		s = Single_Ponc(s)
 	}
+	s = Rep_parenthese(s)
 	return Quote_handle(s)
 }
 
@@ -117,6 +121,21 @@ func parenthese(s string) string {
 	return s
 }
 
+// Replace all necessary parentheses
+func Rep_parenthese(s string) string {
+	Tabpara := []struct {
+		in  string
+		rep string
+	}{
+		{"( ", "("},
+		{" )", ")"},
+	}
+	for _, char := range Tabpara {
+		s = strings.ReplaceAll(s, char.in, char.rep)
+	}
+	return s
+}
+
 // delete something on slice
 func remove(s []string, index int) []string {
 	var str []string
@@ -131,53 +150,266 @@ func remove(s []string, index int) []string {
 }
 
 // simple manipulation mean simple key word
-func manip_hex(s []string) []string {
+func simple_manip(s []string) []string {
+	for i, word := range s {
+		if word == "(hex)" {
+			s = manip_hex(s, i)
+		} else if word == "(bin)" {
+			s = manip_bin(s, i)
+		} else if word == "(up)" {
+			s = manip_up(s, i)
+		} else if word == "(low)" {
+			s = manip_low(s, i)
+		} else if word == "(cap)" {
+			s = manip_cap(s, i)
+		} else if word == "(low," {
+			s = manip_plow(s, i)
+		} else if word == "(up," {
+			s = manip_pup(s, i)
+		} else if word == "(cap," {
+			s = manip_pcap(s, i)
+		}
+	}
+	return s
+}
+
+// simple manipulation mean simple key word
+func manip_hex(s []string, i int) []string {
 	ind := []rune{'.', ',', ';', ':', '!', '?', '\''}
-	for i := 0; i < len(s); i++ {
-		if s[i] == "(hex)" {
-			if i-1 >= 0 {
-				if Inslice(rune(s[i-1][0]), ind) {
-					a := s[i-1]
-					s[i-1] = s[i]
-					s[i] = a
-					return manip_hex(s)
-				} else {
-					a, err := strconv.ParseInt(s[i-1], 16, 64)
-					if err != nil {
-						return remove(s, i)
-					}
-					s[i-1] = strconv.Itoa(int(a))
-					s = remove(s, i)
-				}
+	if i-1 >= 0 && i < len(s) {
+		if len(s[i-1]) > 0 {
+			if Inslice(rune(s[i-1][0]), ind) {
+				s[i], s[i-1] = s[i-1], s[i]
+				return manip_hex(s, i-1)
 			} else {
-				return remove(s, i)
+				a, err := strconv.ParseInt(s[i-1], 16, 64)
+				if err != nil {
+					return remove(s, i)
+				}
+				s[i-1] = strconv.Itoa(int(a))
+				s = remove(s, i)
+			}
+		}
+	} else if i == 0 {
+		return remove(s, i)
+	}
+	return s
+}
+func manip_bin(s []string, i int) []string {
+	ind := []rune{'.', ',', ';', ':', '!', '?', '\''}
+	if i-1 >= 0 && i < len(s) {
+		if len(s[i-1]) > 0 {
+			if Inslice(rune(s[i-1][0]), ind) {
+				s[i], s[i-1] = s[i-1], s[i]
+				return manip_bin(s, i-1)
+			} else {
+				a, err := strconv.ParseInt(s[i-1], 2, 64)
+				if err != nil {
+					return remove(s, i)
+				}
+				s[i-1] = strconv.Itoa(int(a))
+				s = remove(s, i)
+			}
+		}
+	} else if i == 0 {
+		return remove(s, i)
+	}
+	return s
+}
+func manip_up(s []string, i int) []string {
+	if i-1 >= 0 && i < len(s) {
+		s[i-1] = strings.ToUpper(s[i-1])
+	}
+	return remove(s, i)
+}
+func manip_low(s []string, i int) []string {
+	if i-1 >= 0 && i < len(s) {
+		s[i-1] = strings.ToLower(s[i-1])
+	}
+	return remove(s, i)
+}
+func manip_cap(s []string, i int) []string {
+	if i-1 >= 0 && i < len(s) {
+		s[i-1] = strings.ToLower(s[i-1])
+		s[i-1] = strings.Title(s[i-1])
+	}
+	return remove(s, i)
+}
+func manip_plow(s []string, i int) []string {
+	if i >= 0 && i+1 < len(s)-1 {
+		pattern := `[0-9]`
+		match, _ := regexp.MatchString(pattern, s[i+1])
+		if match && s[i+2] == ")" {
+			stop, err := strconv.Atoi(s[i+1])
+			if err != nil {
+				return s
+			}
+			if stop > 0 {
+				for a := 1; a <= stop; i++ {
+					if i-a >= 0 && i-a < len(s) {
+						s = manip_low(s, i-a)
+					}
+				}
+				return remove(remove(remove(s, i), i), i)
+			} else if stop == 0 {
+				return remove(remove(remove(s, i), i), i)
+			}
+		} else {
+			index := find(s, i, ")")
+			if index > i {
+				a := simple_manip(s[i+1 : index])
+				if len(a) == 1 {
+					stop, err := strconv.Atoi(a[0])
+					if err != nil {
+						return s
+					}
+					if stop > 0 {
+						for a := 1; a <= stop; i++ {
+							if i-a >= 0 && i-a < len(s) {
+								s = manip_low(s, i-a)
+							}
+						}
+						return multi_remove(s, i, index)
+					} else if stop == 0 {
+						return multi_remove(s, i, index)
+					} else {
+						return s
+					}
+				}
 			}
 		}
 	}
 	return s
 }
-func manip_bin(s []string) []string {
-	ind := []rune{'.', ',', ';', ':', '!', '?', '\''}
-	for i := 0; i < len(s); i++ {
-		if s[i] == "(bin)" {
-			if i-1 >= 0 {
-				if Inslice(rune(s[i-1][0]), ind) {
-					a := s[i-1]
-					s[i-1] = s[i]
-					s[i] = a
-					return manip_bin(s)
-				} else {
-					a, err := strconv.ParseInt(s[i-1], 2, 64)
-					if err != nil {
-						return remove(s, i)
+func manip_pup(s []string, i int) []string {
+	if i >= 0 && i+1 < len(s)-1 {
+		pattern := `[0-9]`
+		match, _ := regexp.MatchString(pattern, s[i+1])
+		if match && s[i+2] == ")" {
+			stop, err := strconv.Atoi(s[i+1])
+			if err != nil {
+				return s
+			}
+			if stop > 0 {
+				for a := 1; a <= stop; i++ {
+					if i-a >= 0 && i-a < len(s) {
+						s = manip_up(s, i-a)
 					}
-					s[i-1] = strconv.Itoa(int(a))
-					s = remove(s, i)
 				}
-			} else {
-				return remove(s, i)
+				return remove(remove(remove(s, i), i), i)
+			} else if stop == 0 {
+				return remove(remove(remove(s, i), i), i)
+			}
+		} else {
+			index := find(s, i, ")")
+			if index > i {
+				a := simple_manip(s[i+1 : index])
+				if len(a) == 1 {
+					stop, err := strconv.Atoi(a[0])
+					if err != nil {
+						return s
+					}
+					if stop > 0 {
+						for a := 1; a <= stop; i++ {
+							if i-a >= 0 && i-a < len(s) {
+								s = manip_up(s, i-a)
+							}
+						}
+						return multi_remove(s, i, index)
+					} else if stop == 0 {
+						return multi_remove(s, i, index)
+					} else {
+						return s
+					}
+				}
 			}
 		}
 	}
 	return s
+}
+func manip_pcap(s []string, i int) []string {
+	if i >= 0 && i+1 < len(s)-1 {
+		pattern := `[0-9]`
+		match, _ := regexp.MatchString(pattern, s[i+1])
+		if match && s[i+2] == ")" {
+			stop, err := strconv.Atoi(s[i+1])
+			if err != nil {
+				return s
+			}
+			if stop > 0 {
+				for a := 1; a <= stop; i++ {
+					if i-a >= 0 && i-a < len(s) {
+						s = manip_cap(s, i-a)
+					}
+				}
+				return remove(remove(remove(s, i), i), i)
+			} else if stop == 0 {
+				return remove(remove(remove(s, i), i), i)
+			}
+		} else {
+			index := find(s, i, ")")
+			if index > i {
+				a := simple_manip(s[i+1 : index])
+				if len(a) == 1 {
+					stop, err := strconv.Atoi(a[0])
+					if err != nil {
+						return s
+					}
+					if stop > 0 {
+						for a := 1; a <= stop; i++ {
+							if i-a >= 0 && i-a < len(s) {
+								s = manip_cap(s, i-a)
+							}
+						}
+						return multi_remove(s, i, index)
+					} else if stop == 0 {
+						return multi_remove(s, i, index)
+					} else {
+						return s
+					}
+				}
+			}
+		}
+	}
+	return s
+}
+func find(s []string, debt int, str string) int {
+	for j := debt; j < len(s); j++ {
+		if j >= 0 && j < len(s) {
+			if s[j] == str {
+				return j
+			}
+		}
+	}
+	return -1
+}
+func multi_remove(s []string, indx int, time int) []string {
+	for i := 0; i < time; i++ {
+		if indx >= 0 && indx < len(s) {
+			s = remove(s, indx)
+		}
+	}
+	return s
+}
+func main() {
+	if len(os.Args) == 3 {
+		containt, _ := os.ReadFile(os.Args[1])
+
+		text := string(containt)
+
+		text = parenthese(text)
+
+		separed := strings.Fields(text)
+
+		separed = simple_manip(separed)
+
+		result := write(separed)
+
+		result = Ponc(result)
+
+		err := ioutil.WriteFile(os.Args[2], []byte(result), 0644)
+		if err != nil {
+			return
+		}
+	}
 }
