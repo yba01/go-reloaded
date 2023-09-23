@@ -113,7 +113,9 @@ func parenthese(s string) string {
 		{"( up )", "(up)"},
 		{"( low )", "(low)"},
 		{"( cap )", "(cap)"},
-		{" ) ", ") "},
+		{"( cap ,", "(cap,"},
+		{"( up ,", "(up,"},
+		{"( low ,", "(low,"},
 	}
 	for _, char := range TabPonc {
 		s = strings.ReplaceAll(s, char.in, char.rep)
@@ -154,20 +156,28 @@ func simple_manip(s []string) []string {
 	for i, word := range s {
 		if word == "(hex)" {
 			s = manip_hex(s, i)
+			return simple_manip(s)
 		} else if word == "(bin)" {
 			s = manip_bin(s, i)
+			return simple_manip(s)
 		} else if word == "(up)" {
 			s = manip_up(s, i)
+			return simple_manip(s)
 		} else if word == "(low)" {
 			s = manip_low(s, i)
+			return simple_manip(s)
 		} else if word == "(cap)" {
 			s = manip_cap(s, i)
+			return simple_manip(s)
 		} else if word == "(low," {
 			s = manip_plow(s, i)
+			return simple_manip(s)
 		} else if word == "(up," {
 			s = manip_pup(s, i)
+			return simple_manip(s)
 		} else if word == "(cap," {
 			s = manip_pcap(s, i)
+			return simple_manip(s)
 		}
 	}
 	return s
@@ -245,15 +255,17 @@ func manip_plow(s []string, i int) []string {
 				return s
 			}
 			if stop > 0 {
-				for a := 1; a <= stop; i++ {
+				for a := 1; a <= stop; a++ {
 					if i-a >= 0 && i-a < len(s) {
-						s = manip_low(s, i-a)
+						s[i-a] = strings.ToLower(s[i-a])
 					}
 				}
 				return remove(remove(remove(s, i), i), i)
 			} else if stop == 0 {
 				return remove(remove(remove(s, i), i), i)
 			}
+		} else if (!match) && s[i+2] == ")" {
+			return remove(remove(remove(s, i), i), i)
 		} else {
 			index := find(s, i, ")")
 			if index > i {
@@ -264,22 +276,24 @@ func manip_plow(s []string, i int) []string {
 						return s
 					}
 					if stop > 0 {
-						for a := 1; a <= stop; i++ {
+						for a := 1; a <= stop; a++ {
 							if i-a >= 0 && i-a < len(s) {
-								s = manip_low(s, i-a)
+								s[i-a] = strings.ToLower(s[i-a])
 							}
 						}
 						return multi_remove(s, i, index)
 					} else if stop == 0 {
 						return multi_remove(s, i, index)
 					} else {
-						return s
+						return multi_remove(s, i, index)
 					}
 				}
+			} else {
+				os.Exit(0)
 			}
 		}
 	}
-	return s
+	return remove(s, i)
 }
 func manip_pup(s []string, i int) []string {
 	if i >= 0 && i+1 < len(s)-1 {
@@ -291,9 +305,9 @@ func manip_pup(s []string, i int) []string {
 				return s
 			}
 			if stop > 0 {
-				for a := 1; a <= stop; i++ {
+				for a := 1; a <= stop; a++ {
 					if i-a >= 0 && i-a < len(s) {
-						s = manip_up(s, i-a)
+						s[i-a] = strings.ToUpper(s[i-a])
 					}
 				}
 				return remove(remove(remove(s, i), i), i)
@@ -310,9 +324,9 @@ func manip_pup(s []string, i int) []string {
 						return s
 					}
 					if stop > 0 {
-						for a := 1; a <= stop; i++ {
+						for a := 1; a <= stop; a++ {
 							if i-a >= 0 && i-a < len(s) {
-								s = manip_up(s, i-a)
+								s[i-a] = strings.ToUpper(s[i-a])
 							}
 						}
 						return multi_remove(s, i, index)
@@ -337,9 +351,10 @@ func manip_pcap(s []string, i int) []string {
 				return s
 			}
 			if stop > 0 {
-				for a := 1; a <= stop; i++ {
+				for a := 1; a <= stop; a++ {
 					if i-a >= 0 && i-a < len(s) {
-						s = manip_cap(s, i-a)
+						s[i-a] = strings.Title(strings.ToLower(s[i-a]))
+
 					}
 				}
 				return remove(remove(remove(s, i), i), i)
@@ -356,9 +371,9 @@ func manip_pcap(s []string, i int) []string {
 						return s
 					}
 					if stop > 0 {
-						for a := 1; a <= stop; i++ {
+						for a := 1; a <= stop; a++ {
 							if i-a >= 0 && i-a < len(s) {
-								s = manip_cap(s, i-a)
+								s[i-a] = strings.Title(strings.ToLower(s[i-a]))
 							}
 						}
 						return multi_remove(s, i, index)
@@ -393,9 +408,9 @@ func multi_remove(s []string, indx int, time int) []string {
 }
 func main() {
 	if len(os.Args) == 3 {
-		containt, _ := os.ReadFile(os.Args[1])
+		content, _ := os.ReadFile(os.Args[1])
 
-		text := string(containt)
+		text := string(content)
 
 		text = parenthese(text)
 
