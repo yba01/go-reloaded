@@ -182,7 +182,7 @@ func simple_manip(s []string) []string {
 
 // simple manipulation mean simple key word
 func manip_hex(s []string, i int) []string {
-	ind := []rune{'.', ',', ';', ':', '!', '?', '\''}
+	ind := []rune{'.', ',', ';', ':', '!', '?', '\'',')','('}
 	if i-1 >= 0 && i < len(s) {
 		if len(s[i-1]) > 0 {
 			if Inslice(rune(s[i-1][0]), ind) {
@@ -203,7 +203,7 @@ func manip_hex(s []string, i int) []string {
 	return s
 }
 func manip_bin(s []string, i int) []string {
-	ind := []rune{'.', ',', ';', ':', '!', '?', '\''}
+	ind := []rune{'.', ',', ';', ':', '!', '?', '\'',')','('}
 	if i-1 >= 0 && i < len(s) {
 		if len(s[i-1]) > 0 {
 			if Inslice(rune(s[i-1][0]), ind) {
@@ -224,25 +224,53 @@ func manip_bin(s []string, i int) []string {
 	return s
 }
 func manip_up(s []string, i int) []string {
+	ind := []rune{'.', ',', ';', ':', '!', '?', '\'',')','('}
 	if i-1 >= 0 && i < len(s) {
-		s[i-1] = strings.ToUpper(s[i-1])
+		if len(s[i-1])>0 {
+			if Inslice(rune(s[i-1][0]), ind) {
+				s[i], s[i-1] = s[i-1], s[i]
+				return manip_up(s, i-1)
+			}else {
+				s[i-1] = strings.ToUpper(s[i-1])
+				return remove(s,i)
+			}
+		}
 	}
 	return remove(s, i)
 }
 func manip_low(s []string, i int) []string {
+	ind := []rune{'.', ',', ';', ':', '!', '?', '\'',')','('}
 	if i-1 >= 0 && i < len(s) {
-		s[i-1] = strings.ToLower(s[i-1])
+		if len(s[i-1])>0 {
+			if Inslice(rune(s[i-1][0]), ind) {
+				s[i], s[i-1] = s[i-1], s[i]
+				return manip_low(s, i-1)
+			}else {
+				s[i-1] = strings.ToLower(s[i-1])
+				return remove(s,i)
+			}
+		}
 	}
 	return remove(s, i)
 }
 func manip_cap(s []string, i int) []string {
+	ind := []rune{'.', ',', ';', ':', '!', '?', '\'',')','('}
 	if i-1 >= 0 && i < len(s) {
-		s[i-1] = strings.ToLower(s[i-1])
-		s[i-1] = strings.Title(s[i-1])
+		if len(s[i-1])>0 {
+			if Inslice(rune(s[i-1][0]), ind) {
+				s[i], s[i-1] = s[i-1], s[i]
+				return manip_cap(s, i-1)
+			}else {
+				s[i-1] = strings.ToLower(s[i-1])
+				s[i-1] = strings.Title(s[i-1])
+				return remove(s,i)
+			}
+		}
 	}
 	return remove(s, i)
 }
 func manip_plow(s []string, i int) []string {
+ind := []rune{'.', ',', ';', ':', '!', '?', '\'',')','('}
 	if i >= 0 && i+1 < len(s)-1 {
 		pattern := `[0-9]`
 		match, _ := regexp.MatchString(pattern, s[i+1])
@@ -255,7 +283,12 @@ func manip_plow(s []string, i int) []string {
 			if stop > 0 {
 				for a := 1; a <= stop; a++ {
 					if i-a >= 0 && i-a < len(s) {
-						s[i-a] = strings.ToLower(s[i-a])
+						if len(s[i-a])>0 {
+							if Inslice(rune(s[i-a][0]),ind){
+								stop++
+							}
+							s[i-a] = strings.ToLower(s[i-a])
+						}
 					}
 				}
 				return remove(remove(remove(s, i), i), i)
@@ -283,7 +316,12 @@ func manip_plow(s []string, i int) []string {
 					if stop > 0 {
 						for a := 1; a <= stop; a++ {
 							if i-a >= 0 && i-a < len(s) {
-								s[i-a] = strings.ToLower(s[i-a])
+								if len(s[i-a])>0 {
+									if Inslice(rune(s[i-a][0]),ind){
+										stop++
+									}
+									s[i-a] = strings.ToLower(s[i-a])
+								}
 							}
 						}
 						return multi_remove(s, i, index)
@@ -309,6 +347,7 @@ func manip_plow(s []string, i int) []string {
 	return s
 }
 func manip_pup(s []string, i int) []string {
+	ind := []rune{'.', ',', ';', ':', '!', '?', '\'',')','('}
 	if i >= 0 && i+1 < len(s)-1 {
 		pattern := `[0-9]`
 		match, _ := regexp.MatchString(pattern, s[i+1])
@@ -321,7 +360,12 @@ func manip_pup(s []string, i int) []string {
 			if stop > 0 {
 				for a := 1; a <= stop; a++ {
 					if i-a >= 0 && i-a < len(s) {
-						s[i-a] = strings.ToUpper(s[i-a])
+						if len(s[i-a])>0 {
+							if Inslice(rune(s[i-a][0]),ind){
+								stop++
+							}
+							s[i-a] = strings.ToUpper(s[i-a])
+						}
 					}
 				}
 				return remove(remove(remove(s, i), i), i)
@@ -349,7 +393,12 @@ func manip_pup(s []string, i int) []string {
 					if stop > 0 {
 						for a := 1; a <= stop; a++ {
 							if i-a >= 0 && i-a < len(s) {
-								s[i-a] = strings.ToUpper(s[i-a])
+								if len(s[i-a])>0 {
+									if Inslice(rune(s[i-a][0]),ind){
+										stop++
+									}
+									s[i-a] = strings.ToUpper(s[i-a])
+								}
 							}
 						}
 						return multi_remove(s, i, index)
@@ -375,6 +424,7 @@ func manip_pup(s []string, i int) []string {
 	return s
 }
 func manip_pcap(s []string, i int) []string {
+	ind := []rune{'.', ',', ';', ':', '!', '?', '\'',')','('}
 	if i >= 0 && i+1 < len(s)-1 {
 		pattern := `[0-9]`
 		match, _ := regexp.MatchString(pattern, s[i+1])
@@ -387,8 +437,12 @@ func manip_pcap(s []string, i int) []string {
 			if stop > 0 {
 				for a := 1; a <= stop; a++ {
 					if i-a >= 0 && i-a < len(s) {
-						s[i-a] = strings.Title(strings.ToLower(s[i-a]))
-
+						if len(s[i-a])>0 {
+							if Inslice(rune(s[i-a][0]),ind){
+								stop++
+							}
+							s[i-a] = strings.Title(strings.ToLower(s[i-a]))
+						}
 					}
 				}
 				return remove(remove(remove(s, i), i), i)
@@ -416,7 +470,12 @@ func manip_pcap(s []string, i int) []string {
 					if stop > 0 {
 						for a := 1; a <= stop; a++ {
 							if i-a >= 0 && i-a < len(s) {
-								s[i-a] = strings.Title(strings.ToLower(s[i-a]))
+								if len(s[i-a])>0 {
+									if Inslice(rune(s[i-a][0]),ind){
+										stop++
+									}
+									s[i-a] = strings.Title(strings.ToLower(s[i-a]))
+								}
 							}
 						}
 						return multi_remove(s, i, index)
