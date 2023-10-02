@@ -3,6 +3,7 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -65,29 +66,57 @@ func write(s []string) string {
 
 // handle quote or double quotes
 func Quote_handle(s string) string {
+	s = ParseQuote(s)
 	str := strings.Fields(s)
 	new := make(map[int]int)
 	d := 0
+	c := 0
 	for i, word := range str {
 		if word == "'" {
 			d = d + 1
+			c++
 			new[i] = d
 		}
 	}
-	for index, score := range new {
-		if score%2 != 0 {
-			if index < len(str)-1 {
-				str[index+1] = "'" + str[index+1]
-				str[index] = ""
-			}
-		} else {
-			if index > 0 {
-				str[index-1] = str[index-1] + "'"
-				str[index] = ""
+	if c%2 == 0 {
+
+		for index, score := range new {
+			if score%2 != 0 {
+				if index < len(str)-1 {
+					if str[index+1]=="" {
+						continue
+					}else{
+						str[index+1] = "'" + str[index+1]
+						str[index] = ""
+					}
+				}
+			} else {
+				if index > 0 {
+					if str[index-1]=="" {
+						continue
+					}else{
+						str[index-1] = str[index-1] + "'"
+						str[index] = ""
+					}
+				}
 			}
 		}
+	} else {
+		fmt.Println("Odd Quote")
+		os.Exit(0)
 	}
 	return write(str)
+}
+
+// quote parsing
+func ParseQuote(s string) string {
+	s = regexp.MustCompile(`(\')([\'])`).ReplaceAllString(s, " $1 $2")
+	s = regexp.MustCompile(`([\']+)(\')`).ReplaceAllString(s, "$1 $2 ")
+	s = regexp.MustCompile(`^(\')([[:alnum:]])`).ReplaceAllString(s, "$1 $2")
+	s = regexp.MustCompile(`([[:alnum:]])(\')$`).ReplaceAllString(s, "$1 $2")
+	s = regexp.MustCompile(`\s(\')([[:alnum:]])`).ReplaceAllString(s, " $1 $2")
+	s = regexp.MustCompile(`([[:alnum:]])(\')\s`).ReplaceAllString(s, "$1 $2 ")
+	return s
 }
 
 // handle all paranthesis
@@ -182,7 +211,7 @@ func simple_manip(s []string) []string {
 
 // simple manipulation mean simple key word
 func manip_hex(s []string, i int) []string {
-	ind := []rune{'.', ',', ';', ':', '!', '?', '\'',')','('}
+	ind := []rune{'.', ',', ';', ':', '!', '?', '\'', ')', '('}
 	if i-1 >= 0 && i < len(s) {
 		if len(s[i-1]) > 0 {
 			if Inslice(rune(s[i-1][0]), ind) {
@@ -203,7 +232,7 @@ func manip_hex(s []string, i int) []string {
 	return s
 }
 func manip_bin(s []string, i int) []string {
-	ind := []rune{'.', ',', ';', ':', '!', '?', '\'',')','('}
+	ind := []rune{'.', ',', ';', ':', '!', '?', '\'', ')', '('}
 	if i-1 >= 0 && i < len(s) {
 		if len(s[i-1]) > 0 {
 			if Inslice(rune(s[i-1][0]), ind) {
@@ -224,53 +253,65 @@ func manip_bin(s []string, i int) []string {
 	return s
 }
 func manip_up(s []string, i int) []string {
-	ind := []rune{'.', ',', ';', ':', '!', '?', '\'',')','('}
+	ind := []rune{'.', ',', ';', ':', '!', '?', '\'', ')', '('}
 	if i-1 >= 0 && i < len(s) {
-		if len(s[i-1])>0 {
+		if len(s[i-1]) > 0 {
 			if Inslice(rune(s[i-1][0]), ind) {
 				s[i], s[i-1] = s[i-1], s[i]
 				return manip_up(s, i-1)
-			}else {
+			} else {
 				s[i-1] = strings.ToUpper(s[i-1])
-				return remove(s,i)
+				return remove(s, i)
 			}
 		}
 	}
 	return remove(s, i)
 }
 func manip_low(s []string, i int) []string {
-	ind := []rune{'.', ',', ';', ':', '!', '?', '\'',')','('}
+	ind := []rune{'.', ',', ';', ':', '!', '?', '\'', ')', '('}
 	if i-1 >= 0 && i < len(s) {
-		if len(s[i-1])>0 {
+		if len(s[i-1]) > 0 {
 			if Inslice(rune(s[i-1][0]), ind) {
 				s[i], s[i-1] = s[i-1], s[i]
 				return manip_low(s, i-1)
-			}else {
+			} else {
 				s[i-1] = strings.ToLower(s[i-1])
-				return remove(s,i)
+				return remove(s, i)
 			}
 		}
 	}
 	return remove(s, i)
 }
+func cap(s string) string {
+	s = strings.ToLower(s)
+	tab := []rune(s)
+	re := regexp.MustCompile(`[a-z]`)
+	for i:= 0; i < len(tab);i++ {
+		if re.MatchString(string(tab[i])) {
+			tab[i] -= 32
+			break
+		}
+	}
+	return string(tab)
+}
 func manip_cap(s []string, i int) []string {
-	ind := []rune{'.', ',', ';', ':', '!', '?', '\'',')','('}
+	ind := []rune{'.', ',', ';', ':', '!', '?', '\'', ')', '('}
 	if i-1 >= 0 && i < len(s) {
-		if len(s[i-1])>0 {
+		if len(s[i-1]) > 0 {
 			if Inslice(rune(s[i-1][0]), ind) {
 				s[i], s[i-1] = s[i-1], s[i]
 				return manip_cap(s, i-1)
-			}else {
+			} else {
 				s[i-1] = strings.ToLower(s[i-1])
-				s[i-1] = strings.Title(s[i-1])
-				return remove(s,i)
+				s[i-1] = cap(s[i-1])
+				return remove(s, i)
 			}
 		}
 	}
 	return remove(s, i)
 }
 func manip_plow(s []string, i int) []string {
-ind := []rune{'.', ',', ';', ':', '!', '?', '\'',')','('}
+	ind := []rune{'.', ',', ';', ':', '!', '?', '\'', ')', '('}
 	if i >= 0 && i+1 < len(s)-1 {
 		pattern := `[0-9]`
 		match, _ := regexp.MatchString(pattern, s[i+1])
@@ -283,8 +324,8 @@ ind := []rune{'.', ',', ';', ':', '!', '?', '\'',')','('}
 			if stop > 0 {
 				for a := 1; a <= stop; a++ {
 					if i-a >= 0 && i-a < len(s) {
-						if len(s[i-a])>0 {
-							if Inslice(rune(s[i-a][0]),ind){
+						if len(s[i-a]) > 0 {
+							if Inslice(rune(s[i-a][0]), ind) {
 								stop++
 							}
 							s[i-a] = strings.ToLower(s[i-a])
@@ -316,8 +357,8 @@ ind := []rune{'.', ',', ';', ':', '!', '?', '\'',')','('}
 					if stop > 0 {
 						for a := 1; a <= stop; a++ {
 							if i-a >= 0 && i-a < len(s) {
-								if len(s[i-a])>0 {
-									if Inslice(rune(s[i-a][0]),ind){
+								if len(s[i-a]) > 0 {
+									if Inslice(rune(s[i-a][0]), ind) {
 										stop++
 									}
 									s[i-a] = strings.ToLower(s[i-a])
@@ -347,7 +388,7 @@ ind := []rune{'.', ',', ';', ':', '!', '?', '\'',')','('}
 	return s
 }
 func manip_pup(s []string, i int) []string {
-	ind := []rune{'.', ',', ';', ':', '!', '?', '\'',')','('}
+	ind := []rune{'.', ',', ';', ':', '!', '?', '\'', ')', '('}
 	if i >= 0 && i+1 < len(s)-1 {
 		pattern := `[0-9]`
 		match, _ := regexp.MatchString(pattern, s[i+1])
@@ -360,8 +401,8 @@ func manip_pup(s []string, i int) []string {
 			if stop > 0 {
 				for a := 1; a <= stop; a++ {
 					if i-a >= 0 && i-a < len(s) {
-						if len(s[i-a])>0 {
-							if Inslice(rune(s[i-a][0]),ind){
+						if len(s[i-a]) > 0 {
+							if Inslice(rune(s[i-a][0]), ind) {
 								stop++
 							}
 							s[i-a] = strings.ToUpper(s[i-a])
@@ -393,8 +434,8 @@ func manip_pup(s []string, i int) []string {
 					if stop > 0 {
 						for a := 1; a <= stop; a++ {
 							if i-a >= 0 && i-a < len(s) {
-								if len(s[i-a])>0 {
-									if Inslice(rune(s[i-a][0]),ind){
+								if len(s[i-a]) > 0 {
+									if Inslice(rune(s[i-a][0]), ind) {
 										stop++
 									}
 									s[i-a] = strings.ToUpper(s[i-a])
@@ -424,7 +465,7 @@ func manip_pup(s []string, i int) []string {
 	return s
 }
 func manip_pcap(s []string, i int) []string {
-	ind := []rune{'.', ',', ';', ':', '!', '?', '\'',')','('}
+	ind := []rune{'.', ',', ';', ':', '!', '?', '\'', ')', '('}
 	if i >= 0 && i+1 < len(s)-1 {
 		pattern := `[0-9]`
 		match, _ := regexp.MatchString(pattern, s[i+1])
@@ -437,8 +478,8 @@ func manip_pcap(s []string, i int) []string {
 			if stop > 0 {
 				for a := 1; a <= stop; a++ {
 					if i-a >= 0 && i-a < len(s) {
-						if len(s[i-a])>0 {
-							if Inslice(rune(s[i-a][0]),ind){
+						if len(s[i-a]) > 0 {
+							if Inslice(rune(s[i-a][0]), ind) {
 								stop++
 							}
 							s[i-a] = strings.Title(strings.ToLower(s[i-a]))
@@ -470,8 +511,8 @@ func manip_pcap(s []string, i int) []string {
 					if stop > 0 {
 						for a := 1; a <= stop; a++ {
 							if i-a >= 0 && i-a < len(s) {
-								if len(s[i-a])>0 {
-									if Inslice(rune(s[i-a][0]),ind){
+								if len(s[i-a]) > 0 {
+									if Inslice(rune(s[i-a][0]), ind) {
 										stop++
 									}
 									s[i-a] = strings.Title(strings.ToLower(s[i-a]))
@@ -520,21 +561,28 @@ func multi_remove(s []string, indx int, time int) []string {
 }
 func main() {
 	if len(os.Args) == 3 {
-		content, _ := os.ReadFile(os.Args[1])
-
-		text := string(content)
-
-		text = Go_reloaded(text)
-
-		text = Go_reloaded(text)
-
-		err := ioutil.WriteFile(os.Args[2], []byte(text), 0644)
+		contents, err := os.Open(os.Args[1])
 		if err != nil {
-			return
+			fmt.Println("Empty file")
+			os.Exit(0)
 		}
+		_text := bufio.NewScanner(contents)
+		real_text := ""
+		for _text.Scan() {
+
+			text := _text.Text()
+			text0 := Go_reloaded(text)
+			text0 =Go_reloaded(text0)
+			real_text += text0 + "\n"
+
+		}
+
+		ioutil.WriteFile(os.Args[2], []byte(real_text), 0644)
+
 	}
 }
 func Go_reloaded(s string) string {
+	s=ParseQuote(s)
 	s = parenthese(s)
 	str := strings.Fields(s)
 	str = simple_manip(str)
